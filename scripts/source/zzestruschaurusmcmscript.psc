@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 3940
+	return 4210
 endFunction
 
 string function GetStringVer()
@@ -81,17 +81,22 @@ event OnConfigInit()
 	Pages[4] = "$EC_PAGE_5"
 	Pages[4] = "$EC_PAGE_6"
 
-	sTentacleAnims = New String[4]
+	sTentacleAnims = New String[6]
 	sTentacleAnims[0] = "Tentacle Double"
 	sTentacleAnims[1] = "Tentacle Side"
 	sTentacleAnims[2] = "Dwemer Machine 2"
 	sTentacleAnims[3] = "Dwemer Machine"
+	sTentacleAnims[4] = "Slime Creature"
+	sTentacleAnims[5] = "Ooze Creature"
 
-	bTentacleAnims = New Bool[4]
+
+	bTentacleAnims = New Bool[6]
 	bTentacleAnims[0] = false
 	bTentacleAnims[1] = false
 	bTentacleAnims[2] = false
 	bTentacleAnims[3] = false
+	bTentacleAnims[4] = false
+	bTentacleAnims[5] = false
 	
 	sGenderRestriction = New String[3]
 	sGenderRestriction[0] = "$EC_BOTH"
@@ -245,6 +250,40 @@ event OnVersionUpdate(int a_version)
 		bTentacleAnims[3] = false
 	endIf
 
+
+	if (a_version >= 4000 && CurrentVersion < 4000)
+		sTentacleAnims = New String[6]
+		sTentacleAnims[0] = "Tentacle Double"
+		sTentacleAnims[1] = "Tentacle Side"
+		sTentacleAnims[2] = "Dwemer Machine 2"
+		sTentacleAnims[3] = "Dwemer Machine"
+		sTentacleAnims[4] = "Slime Creature"
+		sTentacleAnims[5] = "Ooze Creature"
+
+		bTentacleAnims = New Bool[6]
+		bTentacleAnims[0] = false
+		bTentacleAnims[1] = false
+		bTentacleAnims[2] = false
+		bTentacleAnims[3] = false
+		bTentacleAnims[4] = false
+		bTentacleAnims[5] = false
+	endIf
+
+	if (a_version >= 4100 && CurrentVersion < 4100 && CurrentVersion > 0 )
+		debug.MessageBox("Warning: Upgrades of earlier versions of EC+ to version 4.1 are NOT supported. A new game or clean save is required.")
+	endif
+
+	if (a_version >= 4110 && CurrentVersion < 4110)
+		Pages = New String[6]
+		Pages[0] = "$EC_PAGE_0"
+		Pages[1] = "$EC_PAGE_1"
+		Pages[2] = "$EC_PAGE_3"
+		Pages[3] = "$EC_PAGE_4"
+		Pages[4] = "$EC_PAGE_5"
+		Pages[5] = "$EC_PAGE_6"
+	endif
+
+
 endEvent
 
 ; MENUS -------------------------------------------------------------------------------------------
@@ -290,23 +329,30 @@ event OnPageReset(string a_page)
 ; NODE TESTS --------------------------------------------------------------------------------------
 	bEnableResidualBreast = zzEstrusChaurusResidual.GetValue() as bool
 	bLimitBirthDuration   = zzEstrusChaurusBirth.GetValue() as bool
-	bEnableLeftBreast     = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST, false)
-	bEnableLeftBreast01   = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BREAST01, false)
-	bEnableRightBreast    = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST, false)
-	bEnableRightBreast01  = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BREAST01, false)
-	bEnableLeftButt       = NetImmerse.HasNode(kPlayer, NINODE_LEFT_BUTT, false)
-	bEnableRightButt      = NetImmerse.HasNode(kPlayer, NINODE_RIGHT_BUTT, false)
-	bEnableBelly          = NetImmerse.HasNode(kPlayer, NINODE_BELLY, false)
-	bEnableSkirt02        = NetImmerse.HasNode(kPlayer, NINODE_SKIRT02, false)
+	bool bIsFemale        = (kPlayer.GetLeveledActorBase().GetSex() == 1)
+		
+	if CheckXPMSERequirements(kPlayer, bIsFemale)
+		bEnableSkirt02     = true
+		bEnableBreast      = true
+		bEnableBreast01    = true
+		bEnableButt        = true
+		bEnableBelly       = true
+	else
+		bEnableSkirt02     = XPMSELib.HasNode(kPlayer, NINODE_SKIRT02)
+		bEnableBreast      = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BREAST) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BREAST)
+		bEnableBreast01    = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BREAST01) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BREAST01)
+		bEnableButt        = XPMSELib.HasNode(kPlayer, NINODE_LEFT_BUTT) && XPMSELib.HasNode(kPlayer, NINODE_RIGHT_BUTT)
+		bEnableBelly       = XPMSELib.HasNode(kPlayer, NINODE_BELLY)
+	endif
 
-	if ( !bEnableLeftBreast || !bEnableRightBreast )
+	if ( !bEnableBreast )
 		zzEstrusSwellingBreasts.SetValueInt( 0 )
 		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
 	endIf
-	if ( !bEnableLeftBreast01 || !bEnableRightBreast01 )
+	if ( !bEnableBreast01 )
 		zzEstrusChaurusTorpedoFix.SetValueInt( 0 )
 	endIf
-	if ( !bEnableLeftButt || !bEnableRightButt )
+	if ( !bEnableButt )
 		zzEstrusSwellingButt.SetValueInt( 0 )
 	endIf	
 	if ( !bEnableBelly )
@@ -407,14 +453,14 @@ event OnPageReset(string a_page)
 			AddHeaderOption("$EC_GROWTH_TITLE")
 			AddToggleOptionST("STATE_GROWTH", "$EC_GROWTH", bSwellingEnabled, iOptionFlag)
 			if bSwellingEnabled
-				if bEnableLeftBreast && bEnableRightBreast
+				if bEnableBreast
 					AddToggleOptionST("STATE_BREAST_SCALING", "$EC_BREAST_SCALING", bTorpedoFixEnabled, iOptionFlag)
 					AddTextOptionST("STATE_BREAST_GROWTH", "$EC_BREAST_GROWTH", swellingSliderList[breastSwellingIdx], iOptionFlag)
 				else
 					AddToggleOptionST("STATE_BREAST_SCALING", "$EC_BREAST_SCALING", bTorpedoFixEnabled, OPTION_FLAG_DISABLED)
 					AddTextOptionST("STATE_BREAST_GROWTH", "$EC_BREAST_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
 				endIf
-				if bEnableLeftButt && bEnableRightButt
+				if bEnableButt
 					AddTextOptionST("STATE_BUTT_GROWTH", "$EC_BUTT_GROWTH", swellingSliderList[buttSwellingIdx], iOptionFlag)
 				else
 					AddTextOptionST("STATE_BUTT_GROWTH", "$EC_BUTT_GROWTH", swellingSliderList[0], OPTION_FLAG_DISABLED)
@@ -443,29 +489,6 @@ event OnPageReset(string a_page)
 			AddToggleOption(sTentacleAnims[iIndex], bTentacleAnims[iIndex], OPTION_FLAG_DISABLED)
 		endWhile
 	elseIf ( a_page == Pages[2] )
-; COMPANIONS --------------------------------------------------------------------------------------
-		AddHeaderOption("$EC_COMPANIONS_TITLE")
-		if !bRegisterCompanions
-			AddToggleOptionST("STATE_COMPANIONS", "$EC_REGISTER", bRegisterCompanions, iOptionFlag)
-		else
-			AddToggleOptionST("STATE_COMPANIONS", "$EC_UNREGISTER", bRegisterCompanions, iOptionFlag)
-		endIf
-
-		iCount = 0
-		iIndex = me.myActorsList.length
-		while iIndex > 1
-			iIndex -= 1
-			if me.myActorsList[iIndex] != none
-				thisName = me.myActorsList[iIndex].GetLeveledActorBase().GetName()
-				AddTextOption(thisName, "", iOptionFlag)
-				iCount += 1
-			endIf
-		endWhile
-
-		if iCount == 0
-			AddTextOption("$EC_NONE", "", OPTION_FLAG_NONE)
-		endIf
-	elseIf ( a_page == Pages[3] )
 ; HATCHERY ----------------------------------------------------------------------------------------
 		iIndex = 0
 		iCount = 0
@@ -491,7 +514,7 @@ event OnPageReset(string a_page)
 			AddTextOption("$EC_NONE", "", OPTION_FLAG_NONE)
 		endIf
 ; MODS & DLC --------------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[4] )
+	elseIf ( a_page == Pages[3] )
 		if kwDeviousDevices != none
 			AddTextOptionST("STATE_DLCMOD_0", "$EC_DLCMOD_0", "$EC_ENABLED", OPTION_FLAG_NONE)
 		else
@@ -503,20 +526,20 @@ event OnPageReset(string a_page)
 			AddTextOptionST("STATE_DLCMOD_1", "$EC_DLCMOD_1", "$EC_DISABLED", OPTION_FLAG_NONE)
 		endIf
 ; NODE TESTS --------------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[5] )
+	elseIf ( a_page == Pages[4] )
 		SetCursorFillMode(TOP_TO_BOTTOM)
 		AddToggleOptionST("STATE_RESIDUAL_BREAST_TOGGLE", "$EC_RESIDUAL_BREAST", bEnableResidualBreast, iOptionFlag)
 		
-		AddToggleOption("$EC_NINODE_LEFT_BREAST", bEnableLeftBreast, OPTION_FLAG_DISABLED)
-		AddToggleOption("$EC_NINODE_LEFT_BREAST01", bEnableLeftBreast01, OPTION_FLAG_DISABLED)
-		AddToggleOption("$EC_NINODE_RIGHT_BREAST", bEnableRightBreast, OPTION_FLAG_DISABLED)
-		AddToggleOption("$EC_NINODE_RIGHT_BREAST01", bEnableRightBreast01, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_LEFT_BREAST", bEnableBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_LEFT_BREAST01", bEnableBreast01, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BREAST", bEnableBreast, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BREAST01", bEnableBreast01, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BREAST_SCALE", "$EC_NINODE_MAX_BREAST_SCALE", zzEstrusChaurusMaxBreastScale.GetValue(), "{1}", iOptionFlag)
 		AddToggleOption("$EC_NINODE_SKIRT02", bEnableBelly, OPTION_FLAG_DISABLED)
 		AddToggleOption("$EC_NINODE_BELLY", bEnableSkirt02, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BELLY_SCALE", "$EC_NINODE_MAX_BELLY_SCALE", zzEstrusChaurusMaxBellyScale.GetValue(), "{1}", iOptionFlag)
-		AddToggleOption("$EC_NINODE_LEFT_BUTT", bEnableLeftButt, OPTION_FLAG_DISABLED)
-		AddToggleOption("$EC_NINODE_RIGHT_BUTT", bEnableRightButt, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_LEFT_BUTT", bEnableButt, OPTION_FLAG_DISABLED)
+		AddToggleOption("$EC_NINODE_RIGHT_BUTT", bEnableButt, OPTION_FLAG_DISABLED)
 		AddSliderOptionST("STATE_NINODE_BUTT_SCALE", "$EC_NINODE_MAX_BUTT_SCALE", zzEstrusChaurusMaxButtScale.GetValue(), "{1}", iOptionFlag)
 
 		SetCursorPosition(1)
@@ -533,7 +556,7 @@ event OnPageReset(string a_page)
 		AddTextOptionST("STATE_NINODE_6", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 		AddTextOptionST("STATE_NINODE_7", "$EC_NINODE_INFO", "", OPTION_FLAG_NONE)
 ; VERSION CHECK -----------------------------------------------------------------------------------
-	elseIf ( a_page == Pages[6] )
+	elseIf ( a_page == Pages[5] )
 		AddHeaderOption("Estrus Chaurus v" + GetStringVer())
 		AddToggleOption("$EC_VERSION_OK", (GetVersion() >= 3700), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SKSE v" + skseVersionString() )
@@ -544,8 +567,12 @@ event OnPageReset(string a_page)
 		AddToggleOption("$EC_VERSION_OK", (FNIS.VersionCompare(5,1,0,true) >= 0), OPTION_FLAG_DISABLED)
 		AddHeaderOption("SexLab v" + sexlab.GetStringVer())
 		AddToggleOption("$EC_VERSION_OK", (sexlab.GetVersion() >= 1500), OPTION_FLAG_DISABLED)
-		;AddHeaderOption("Actor Events v" + aemcm.GetStringVer())
-		;AddToggleOption("$EC_VERSION_OK", (aemcm.GetVersion() >= 2200), OPTION_FLAG_DISABLED)
+		AddHeaderOption("XP32MSE v" + StringUtil.Substring(XPMSELib.GetXPMSEVersion(kPlayer, bisFemale) as string, 0, 4))
+		AddToggleOption("$EC_VERSION_OK", (XPMSELib.GetXPMSEVersion(kPlayer, bisFemale) >= 2.8) , OPTION_FLAG_DISABLED)
+		AddHeaderOption("NiOverride Plugin v" + SKSE.GetPluginVersion("NiOverride"))
+		AddToggleOption("$EC_VERSION_OK", (SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION) , OPTION_FLAG_DISABLED)
+		AddHeaderOption("NiOverride Scripts v" + SKSE.GetPluginVersion("NiOverride"))
+		AddToggleOption("$EC_VERSION_OK", (NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION) , OPTION_FLAG_DISABLED) 
 	endIf
 endEvent
 
@@ -609,39 +636,46 @@ state STATE_UNINSTALL
 endState
 state STATE_FORCE_FIX
 	event OnSelectST()
-		while ( Utility.IsInMenuMode() )
-			Utility.Wait( 2.0 )
-		endWhile
+		SetToggleOptionValueST( true )
+		If ShowMessage("$EC_UPDATE_EXIT")
 
-		int idx1
-		int idx2
+			;while ( Utility.IsInMenuMode() )
+				Utility.Wait( 0.1 )
+			;endWhile
 
-		string[] nodes = new string[8]
-		nodes[0] = "NPC L Breast"
-		nodes[1] = "NPC L Breast01"
-		nodes[2] = "NPC L Butt"
-		nodes[3] = "NPC R Breast"
-		nodes[4] = "NPC R Breast01"
-		nodes[5] = "NPC R Butt"
-		nodes[6] = "SkirtBBone02"
-		nodes[7] = "NPC Belly"
+			int idx1
+			int idx2
+
+			string[] nodes = new string[8]
+			nodes[0] = "NPC L Breast"
+			nodes[1] = "NPC L Breast01"
+			nodes[2] = "NPC L Butt"
+			nodes[3] = "NPC R Breast"
+			nodes[4] = "NPC R Breast01"
+			nodes[5] = "NPC R Butt"
+			nodes[6] = "SkirtBBone02"
+			nodes[7] = "NPC Belly"
+
+			Actor kActor = Game.GetCurrentCrosshairRef() as Actor
 		
-		idx1 = me.myActorsList.length
-		while idx1 > 0
-			idx1 -= 1
+			If kActor == None
+				kActor = Player
+			Endif
+			bool bIsFemale = (kActor.GetLeveledActorBase().GetSex() == 1)
 
 			idx2 = nodes.length
-			While idx2 > 0
+
+			While idx2 >0
 				idx2 -= 1
 				
-				NetImmerse.SetNodeScale( me.myActorsList[idx1], nodes[idx2], 1.0, false)
-				if ( idx1 == 0 )
-					NetImmerse.SetNodeScale( me.myActorsList[idx1], nodes[idx2], 1.0, true)
-				endIf
+				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, EC_KEY)
 			endWhile
 
-			me.myActorsList[idx1].QueueNiNodeUpdate()
-		endWhile
+			kActor.QueueNiNodeUpdate()
+			;SetToggleOptionValueST( false )
+		else
+			SetToggleOptionValueST( false )
+		endIf
 	endEvent
 
 	event OnDefaultST()
@@ -1047,34 +1081,6 @@ state STATE_FLUIDS ; TOGGLE
 	endEvent
 endState
 
-; COMPANIONS --------------------------------------------------------------------------------------
-state STATE_COMPANIONS ; TOGGLE
-	event OnSelectST()
-		bRegisterCompanions = !bRegisterCompanions
-		
-		if bRegisterCompanions
-			me.AddCompanions()
-		else
-			me.RemoveCompanions()
-		endIf
-		
-		SetToggleOptionValueST( bRegisterCompanions )
-		ForcePageReset()
-	endEvent
-
-	event OnDefaultST()
-		bRegisterCompanions = false
-		SetToggleOptionValueST( bRegisterCompanions )
-
-		me.RemoveCompanions()
-		ForcePageReset()
-	endEvent
-
-	event OnHighlightST()
-		SetInfoText("$EC_COMPANIONS_INFO")
-	endEvent
-endState
-
 ; MODS & DLC --------------------------------------------------------------------------------------
 state STATE_DLCMOD_0 ; TEXT
 	event OnHighlightST()
@@ -1086,6 +1092,10 @@ state STATE_DLCMOD_1 ; TEXT
 		SetInfoText("$EC_DLCMOD_1_INFO")
 	endEvent
 endState
+
+bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
+	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION
+EndFunction
 
 ; PUBLIC VARIABLES --------------------------------------------------------------------------------
 ; VERSION 0
@@ -1122,6 +1132,15 @@ String              Property NINODE_BELLY          = "NPC Belly" AutoReadOnly
 Float               Property NINODE_MAX_SCALE      = 3.0 AutoReadOnly
 Float               Property NINODE_MIN_SCALE      = 0.1 AutoReadOnly
 Float               Property RESIDUAL_MULT_DEFAULT = 1.2 AutoReadOnly
+string              Property EC_KEY                = "Estrus_Chaurus" AutoReadOnly
+
+; NiOverride version data
+int                      Property NIOVERRIDE_VERSION    = 4 AutoReadOnly
+int                      Property NIOVERRIDE_SCRIPT_VERSION = 4 AutoReadOnly
+
+; XPMSE version data
+float                    Property XPMSE_VERSION         = 3.0 AutoReadOnly
+float                    Property XPMSELIB_VERSION      = 3.0 AutoReadOnly
 
 ; VERSION 10
 ;_ae_framework       Property ae                    Auto
@@ -1196,8 +1215,7 @@ bool bUninstallMessage     = False
 ; VERSION 6
 Actor kPlayer              = None
 Bool  bDisableNodeChange   = False
-Bool  bEnableLeftBreast    = False
-Bool  bEnableRightBreast   = False
+Bool  bEnableBreast    = False
 Bool  bEnableBelly         = False
 Bool  bEnableSkirt02       = False
 
@@ -1224,10 +1242,8 @@ Bool bRegisterAnimations   = False
 
 ; VERSION 3100
 Int  buttSwellingIdx       = 0
-Bool bEnableLeftButt       = False
-Bool bEnableRightButt      = False
-Bool bEnableLeftBreast01   = False
-Bool bEnableRightBreast01  = False
+Bool bEnableButt       = False
+Bool bEnableBreast01   = False
 
 ; VERSION 3201
 Bool bEnableResidualBreast = False

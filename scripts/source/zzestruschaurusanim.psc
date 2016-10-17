@@ -13,6 +13,8 @@ function LoadAnimations()
 	RegisterAnimation("EstrusTentacleSide")
 	RegisterAnimation("DwemerMachine")
 	RegisterAnimation("DwemerMachine02")
+	RegisterAnimation("SlimeCreature")
+	RegisterAnimation("OozeCreature")
 endFunction
 
 
@@ -143,6 +145,75 @@ function DwemerMachine02(int id)
 	Base.AddTag("Estrus")
 	Base.AddTag("Dwemer")
 	Base.AddTag("Machine")
+	Base.AddTag("PCKnownAnim")
+
+	Base.Save(id)
+
+endFunction
+
+
+function SlimeCreature(int id)
+	sslBaseAnimation Base = Create(id)
+	Base.name = "Slime Creature"
+
+	Base.SetContent(Sexual)
+	Base.SoundFX = Squishing
+
+	int a1 = Base.AddPosition(Female, addCum=Vaginal)
+	;Base.AddPositionStage(a1, "zzEstrusFleeIdle01", 0)
+	;Base.AddPositionStage(a1, "zzEstrusFleeIdle02", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S1", 0)
+	;Base.AddPositionStage(a1, "zzEstrusETC02S2", 0)
+	;Base.AddPositionStage(a1, "zzEstrusETC02S3", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S41", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S42", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S43", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S5", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S61", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S62", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC02S63", 0)
+	Base.AddPositionStage(a1, "zzEstrusCommon01Up", 0)
+	Base.AddPositionStage(a1, "zzEstrusCommon02Up", 0)
+	;Base.AddPositionStage(a1, "zzEstrusCommon03Up", 0)
+	;Base.AddPositionStage(a1, "zzEstrusCommon04Up", 0)
+	Base.AddPositionStage(a1, "zzEstrusGetUpFaceUp", 0)
+
+	Base.AddTag("Estrus")
+	Base.AddTag("Slime")
+	Base.AddTag("PCKnownAnim")
+
+	Base.Save(id)
+
+endFunction
+
+function OozeCreature(int id)
+	sslBaseAnimation Base = Create(id)
+	Base.name = "Ooze Creature"
+
+	Base.SetContent(Sexual)
+	Base.SoundFX = Squishing
+
+	int a1 = Base.AddPosition(Female, addCum=Vaginal)
+	;Base.AddPositionStage(a1, "zzEstrusFleeIdle01", 0)
+	;Base.AddPositionStage(a1, "zzEstrusFleeIdle02", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S1", 0)
+	;Base.AddPositionStage(a1, "zzEstrusETC02S2", 0)
+	;Base.AddPositionStage(a1, "zzEstrusETC02S3", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S41", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S42", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC072S43", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S5", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S61", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S62", 0)
+	Base.AddPositionStage(a1, "zzEstrusETC07S63", 0)
+	Base.AddPositionStage(a1, "zzEstrusCommon01Up", 0)
+	Base.AddPositionStage(a1, "zzEstrusCommon02Up", 0)
+	;Base.AddPositionStage(a1, "zzEstrusCommon03Up", 0)
+	;Base.AddPositionStage(a1, "zzEstrusCommon04Up", 0)
+	Base.AddPositionStage(a1, "zzEstrusGetUpFaceUp", 0)
+
+	Base.AddTag("Estrus")
+	Base.AddTag("Ooze")
 	Base.AddTag("PCKnownAnim")
 
 	Base.Save(id)

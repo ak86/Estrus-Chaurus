@@ -1,4 +1,4 @@
-Scriptname zzEstrusBreederEffectScript extends activemagiceffect
+Scriptname zzestruschaurusaliasscript extends ReferenceAlias  
 
 int function minInt(int iA, int iB)
 	if iA < iB
@@ -144,11 +144,67 @@ function triggerNodeUpdate(bool abwait = false)
 endFunction
 
 event OnUpdateGameTime()
-	Utility.Wait( 5.0 )
+	int Timer = 5
+	while !kTarget.Is3DLoaded() && Timer > 0
+		Timer -= 1
+		Utility.Wait( 1.0 )
+	endWhile
 
-	Debug.Trace("_EC_::GTS::BIRTHING")
-	GoToState("BIRTHING")
+	If kTarget.Is3DLoaded() && kTarget.GetParentCell() == kPlayer.GetParentCell()
+		Debug.Trace("_EC_::GTS::BIRTHING")
+		GoToState("BIRTHING")
+	else
+		GoToState("ENDPREGNANCY")
+	endif
 endEvent
+
+Event OnLoad()
+	;debug.Notification("Load event: " + kTarget.GetActorBase().getname())
+	GoToState(ActiveState)
+EndEvent
+	
+Event OnUnload()
+	;debug.Notification("Unload event: " + kTarget.GetActorBase().getname())
+	ActiveState = GetState()
+	GoToState("SUSPEND")
+EndEvent
+
+bool Function Check3dState() ;Got to Suspend state if 3d cannot be loaded
+	If !kTarget.Is3DLoaded() 
+		utility.wait(2)
+	endif
+	If kTarget.Is3DLoaded() && kTarget.GetParentCell() == kPlayer.GetParentCell()
+		if Getstate() == "SUSPEND"
+			OnLoad()
+			;debug.Notification("Check3dState Resume event: " + kTarget.GetActorBase().getname())
+		endif
+		return true
+	Else
+		if !Getstate() == "SUSPEND"
+			;debug.Notification("Check3dState Suspend event: " + kTarget.GetActorBase().getname())
+			OnUnload()
+		endif
+		Return false
+	endif
+endFunction
+
+state SUSPEND
+	event OnBeginState()
+		Debug.Trace("_EC_::state::SUSPEND")
+	endEvent
+
+	event OnUpdate()
+		Check3dState()
+		RegisterForSingleUpdate( fWaitingTime )
+	endEvent
+
+	event OnUpdateGameTime()
+		;debug.Notification("Suspend EndPregnancy event: " + kTarget.GetActorBase().getname())
+		Debug.Trace("_EC_::END OF PREGNANCY WITH NPC UNLOADED - "+ kTarget.GetActorBase().getname())
+		GoToState("ENDPREGNANCY")
+	endEvent
+
+endState
 
 state IMPREGNATE
 	event OnBeginState()
@@ -193,9 +249,10 @@ state INCUBATION_NODE
 				Utility.Wait( 2.0 )
 			endWhile
 			; make sure we have 3d loaded to access
-			while ( !kTarget.Is3DLoaded() )
-				Utility.Wait( 1.0 )
-			endWhile
+			if !Check3dState() 
+				RegisterForSingleUpdate( fWaitingTime )
+				Return
+			Endif
 			fGameTime       = Utility.GetCurrentGameTime()
 			fInfectionSwell = ( fGameTime - fInfectionStart ) / 1.6666 ;1.6666
 			fBellySwell     = 0.0
@@ -216,7 +273,7 @@ state INCUBATION_NODE
 
 				if fInfectionLastMsg < fGameTime && fInfectionSwell > 0.05
 					fInfectionLastMsg = fGameTime + Utility.RandomFloat(0.0417, 0.25)
-					Debug.Notification(sSwellingMsgs[Utility.RandomInt(0, sSwellingMsgs.Length - 1)])
+					;Debug.Notification(sSwellingMsgs[Utility.RandomInt(0, sSwellingMsgs.Length - 1)])
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
@@ -411,7 +468,7 @@ state AFTERMATH
 
 		;Debug.SendAnimationEvent(kTarget, "zzEstrusGetUpFaceUp")
 		;Debug.SendAnimationEvent(kTarget, "BleedOutStop")
-		kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
+		OnBreederFinish()
 	
 		SendModEvent("ECBirthCompleted") ;as requested by Skyrimll
 
@@ -422,17 +479,34 @@ state AFTERMATH
 	endEvent
 endState
 
-event OnEffectStart(Actor akTarget, Actor akCaster)
+state ENDPREGNANCY
+	event OnBeginState()
+		Debug.Trace("_EC_::state::ENDPREGNANCY")
+
+		;Debug.SendAnimationEvent(kTarget, "BleedOutStop")
+		OnBreederFinish()
+	endEvent
+
+	event OnUpdate()
+		; catch any pending updates
+	endEvent
+
+endState
+
+event OnBreederStart(Actor akTarget, Int akIncubationIdx)
+	
+	iIncubationIdx = akIncubationIdx
+	
 	kTarget            = akTarget
-	kCaster            = akCaster
 	kPlayer            = Game.GetPlayer()
 	bDisableNodeChange = zzEstrusDisableNodeResize.GetValue() as Bool
 	bIsAnimating	   = false
 	
-	sSwellingMsgs      = new String[3]
-	sSwellingMsgs[0]   = "$EC_SWELLING_1_3RD"
-	sSwellingMsgs[1]   = "$EC_SWELLING_2_3RD"
-	sSwellingMsgs[2]   = "$EC_SWELLING_3_3RD"
+	;sSwellingMsgs      = new String[3]
+	;sSwellingMsgs[0]   = "$EC_SWELLING_1_3RD"
+	;sSwellingMsgs[1]   = "$EC_SWELLING_2_3RD"
+	;sSwellingMsgs[2]   = "$EC_SWELLING_3_3RD"
+
 
 	GoToState("IMPREGNATE")
 	zzEstrusChaurusInfected.Mod( 1.0 )
@@ -447,31 +521,19 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	bTorpedoFixEnabled = zzEstrusChaurusTorpedoFix.GetValueInt() as Bool
 
 	;kCaster.PathToReference(kTarget, 1.0)
+
+	kTarget.AddToFaction(zzEstrusChaurusBreederFaction)
 	
-	if ( !kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
-		kTarget.AddToFaction(zzEstrusChaurusBreederFaction)
-	endIf
-
-	if kTarget == kPlayer
-		iIncubationIdx = 0
-		MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
-		MCM.kIncubationDue[iIncubationIdx] = kTarget
-
-		if kPlayer.GetAnimationVariableInt("i1stPerson") as bool
-			Game.ForceThirdPerson()
-		endIf
-	else
-		iIncubationIdx = MCM.kIncubationDue.Find(none, 1)
-		if iIncubationIdx != -1
-			MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
-			MCM.kIncubationDue[iIncubationIdx] = kTarget
-			
-			(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
-		else
-			kTarget.RemoveSpell(zzEstrusChaurusBreederAbility)
-			return
-		endif
-	endif
+	;iIncubationIdx = Self.GetID() ;MCM.kIncubationDue.Find(kTarget, 1)
+	;if iIncubationIdx > 0
+	MCM.fIncubationDue[iIncubationIdx] = fthisIncubation
+	MCM.kIncubationDue[iIncubationIdx] = kTarget
+	
+			;(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).ForceRefTo(kTarget)
+		;else
+			;self.Clear()
+			;return
+		;endif
 
 	; SexLab Aroused
 	manageSexLabAroused(0)
@@ -491,6 +553,10 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	endif
 	
 	if ( !bDisableNodeChange )
+		If !Check3dState()
+			Registerforsingleupdate(fWaitingTime)
+			return
+		endIf
 		bBreastEnabled     = ( bEnableBreast && zzEstrusSwellingBreasts.GetValueInt() as bool )
 		bButtEnabled       = ( bEnableButt && zzEstrusSwellingButt.GetValueInt() as bool )
 		bBellyEnabled      = ( bEnableBelly && zzEstrusSwellingBelly.GetValueInt() as bool )
@@ -518,16 +584,13 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	endif
 endEvent
 
-event OnEffectFinish(Actor akTarget, Actor akCaster)
+event OnBreederFinish()
 	zzEstrusChaurusInfected.Mod( -1.0 )
 	bUninstall = zzEstrusChaurusUninstall.GetValueInt() as Bool
 
 	if iIncubationIdx != -1
 		MCM.fIncubationDue[iIncubationIdx] = 0.0
 		MCM.kIncubationDue[iIncubationIdx] = None
-		if kTarget != kPlayer
-			;(EC.GetNthAlias(iIncubationIdx) as ReferenceAlias).Clear()
-		endif
 	endIf
 
 	if ( kTarget.IsInFaction(zzEstrusChaurusBreederFaction) )
@@ -547,7 +610,8 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 
 	if ( !bDisableNodeChange )
 		; make sure we have loaded 3d to access
-		while ( !kTarget.Is3DLoaded() || kTarget.IsOnMount() || Utility.IsInMenuMode() )
+
+		while ( kTarget.IsOnMount() || Utility.IsInMenuMode() )
 			Utility.Wait( 1.0 )
 		endWhile
 
@@ -563,8 +627,14 @@ event OnEffectFinish(Actor akTarget, Actor akCaster)
 			SetNodeScaleBreast(kTarget, bIsFemale, fOrigBreast, fOrigBreast01)
 		endif
 		
-		triggerNodeUpdate(true)
+		if !kTarget.Is3DLoaded() ;******************************
+			triggerNodeUpdate(true)
+		endif
+
 	endif
+			
+	Self.Clear()
+
 endEvent
 
 
@@ -628,7 +698,7 @@ EndFunction
 
 bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
 	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION
-EndFunction		
+EndFunction
 
 Actor kTarget  			 = None
 Actor kCaster            = None
@@ -679,6 +749,7 @@ Int iAnimationIndex      = 1
 bool bIsAnimating		 = false
 
 String[] sSwellingMsgs
+String ActiveState
 
 Quest				     Property EC                             Auto
 zzEstrusChaurusMCMscript Property MCM                            Auto 

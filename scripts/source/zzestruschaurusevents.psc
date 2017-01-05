@@ -44,6 +44,7 @@ int EventFxID0 = 0
 int EventFxID1 = 0
 
 bool dDLoaded = false
+bool UseECFx = true
 
 zadlibs dDlibs = None
 
@@ -125,6 +126,7 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		bool isPlayer = (akVictim == PlayerRef)
 		string EstrusType
 		string strVictimRefid = akVictim.getformid() as string
+		UseECFx = UseFx
 
 		int EstrusID = AnimID
 
@@ -170,9 +172,7 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		sexActors    = new actor[1]
 		sexActors[0] = akVictim
 		RegisterForModEvent("AnimationStart_" + strVictimRefid, "ECAnimStart")
-		If UseFX
-			RegisterForModEvent("StageEnd_" + strVictimRefid, "ECAnimStage")
-		Endif
+		RegisterForModEvent("StageEnd_" + strVictimRefid, "ECAnimStage")
 		RegisterForModEvent("AnimationEnd_" + strVictimRefid,   "ECAnimEnd")
 		If dDArmbinder
 			if isPlayer
@@ -292,22 +292,24 @@ event ECAnimStage(string hookName, string argString, float argNum, form sender)
 			;endif
 		;endif
 
-		if stage == 7 && !(mcm.zzEstrusDisablePregnancy.GetValueInt() as Bool)
+		if stage == 7 && !(mcm.zzEstrusDisablePregnancy.GetValueInt() as Bool) && UseECFX
 			Oviposition(actorlist[0], true)
 		endIf
 	elseif animation.hastag("Machine")
-		if stage == 3
+		if stage == 3 && UseECFX
 			if isPlayer
 				debug.notification("You are losing control...")
 			endif
 		elseif stage == 5
-			if isPlayer
+			if isPlayer && UseECFX
 				debug.notification("You begin to orgasm uncontrollably...")
 			endif
 			SexLab.ApplyCum(actorlist[0], 5)
 		elseif stage == 8
-			DwemerExhaustion.RemoteCast(actorlist[0],actorlist[0],actorlist[0])
-			if isPlayer
+			if  UseECFX
+				DwemerExhaustion.RemoteCast(actorlist[0],actorlist[0],actorlist[0])
+			endIf
+			if isPlayer && UseECFX
 				debug.notification("The machine absorbs your sexual energy...")
 			endif
 		;elseif stage == 9
@@ -317,11 +319,11 @@ event ECAnimStage(string hookName, string argString, float argNum, form sender)
 				;stripFollower(actorlist[0])
 			;endif
 		elseif stage == 10
-			if isPlayer
+			if isPlayer && UseECFX
 				debug.notification("You have been forced to orgasm until exhausted...")
 			endif
 		elseif stage == 11
-			if isPlayer
+			if isPlayer && UseECFX
 				debug.notification("You are almost too weak to stand...")
 			endif
 		endif

@@ -220,16 +220,29 @@ state INCUBATION_NODE
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
-				if ( fPregBreast > NINODE_MAX_SCALE )
-					fPregBreast = NINODE_MAX_SCALE
-				endif
-				if bTorpedoFixEnabled
-					if ( fPregBreast01 < NINODE_MIN_SCALE )
-						fPregBreast01 = NINODE_MIN_SCALE
+				if (is_slif_installed())
+					float breastMin = SLIF_Main.GetMinValue(kTarget, "Estrus Chaurus", "slif_left_breast", NINODE_MIN_SCALE)
+					float breastMax = SLIF_Main.GetMaxValue(kTarget, "Estrus Chaurus", "slif_left_breast", zzEstrusChaurusMaxBreastScale.GetValue())
+					if (fPregBreast > breastMax)
+						fPregBreast = breastMax
+					endIf
+					if bTorpedoFixEnabled
+						if (fPregBreast01 < breastMin)
+							fPregBreast01 = breastMin
+						endIf
+					endIf
+				else
+					if (fPregBreast > NINODE_MAX_SCALE)
+						fPregBreast = NINODE_MAX_SCALE
 					endif
-				endif
-				if ( fPregBreast > zzEstrusChaurusMaxBreastScale.GetValue() )
-					fPregBreast = zzEstrusChaurusMaxBreastScale.GetValue()
+					if bTorpedoFixEnabled
+						if (fPregBreast01 < NINODE_MIN_SCALE)
+							fPregBreast01 = NINODE_MIN_SCALE
+						endif
+					endif
+					if (fPregBreast > zzEstrusChaurusMaxBreastScale.GetValue())
+						fPregBreast = zzEstrusChaurusMaxBreastScale.GetValue()
+					endif
 				endif
 
 				kTarget.SetAnimationVariableFloat("ecBreastSwell", fBreastSwell)
@@ -259,11 +272,19 @@ state INCUBATION_NODE
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
-				if ( fPregBelly > NINODE_MAX_SCALE * 2.0 ) 
-					fPregBelly = NINODE_MAX_SCALE * 2.0 
-				endif
-				if ( fPregBelly > zzEstrusChaurusMaxBellyScale.GetValue() )
-					fPregBelly = zzEstrusChaurusMaxBellyScale.GetValue()
+				if (is_slif_installed())
+					float bellyMin = SLIF_Main.GetMinValue(kTarget, "Estrus Chaurus", "slif_belly", NINODE_MIN_SCALE)
+					float bellyMax = SLIF_Main.GetMaxValue(kTarget, "Estrus Chaurus", "slif_belly", zzEstrusChaurusMaxBellyScale.GetValue())
+					if (fPregBelly > bellyMax)
+						fPregBelly = bellyMax
+					endIf
+				else
+					if (fPregBelly > NINODE_MAX_SCALE * 2.0)
+						fPregBelly = NINODE_MAX_SCALE * 2.0
+					endif
+					if (fPregBelly > zzEstrusChaurusMaxBellyScale.GetValue() )
+						fPregBelly = zzEstrusChaurusMaxBellyScale.GetValue()
+					endif
 				endif
 
 				kTarget.SetAnimationVariableFloat("ecBellySwell", fBellySwell)
@@ -285,11 +306,19 @@ state INCUBATION_NODE
 					Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 				endif
 
-				if ( fPregButt > NINODE_MAX_SCALE )
-					fPregButt = NINODE_MAX_SCALE 
-				endif
-				if ( fPregButt > zzEstrusChaurusMaxButtScale.GetValue() )
-					fPregButt = zzEstrusChaurusMaxButtScale.GetValue()
+				if (is_slif_installed())
+					float buttMin = SLIF_Main.GetMinValue(kTarget, "Estrus Chaurus", "slif_left_butt", NINODE_MIN_SCALE)
+					float buttMax = SLIF_Main.GetMaxValue(kTarget, "Estrus Chaurus", "slif_left_butt", zzEstrusChaurusMaxButtScale.GetValue())
+					if (fPregButt > buttMax)
+						fPregButt = buttMax
+					endIf
+				else
+					if (fPregButt > NINODE_MAX_SCALE)
+						fPregButt = NINODE_MAX_SCALE 
+					endif
+					if (fPregButt > zzEstrusChaurusMaxButtScale.GetValue())
+						fPregButt = zzEstrusChaurusMaxButtScale.GetValue()
+					endif
 				endif
 
 				SetNodeScaleButt(kTarget, bIsFemale, fPregButt)
@@ -605,26 +634,52 @@ function StripItem(actor akVictim, form ItemRef)
 endfunction
 
 Function SetNodeScaleBelly(Actor akActor, bool isFemale, float value)
-	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_BELLY, value, EC_KEY)
+	if (is_slif_installed())
+		float bellyMax = zzEstrusChaurusMaxBellyScale.GetValue()
+		SLIF_Main.inflate(akActor, "Estrus Chaurus", "slif_belly", value, -1, -1, EC_KEY, NINODE_MIN_SCALE, bellyMax, 1.0, 0.1)
+	else
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_BELLY, value, EC_KEY)
+	endIf
 EndFunction
 
 Function SetNodeScaleButt(Actor akActor, bool isFemale, float value)
-	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BUTT, value, EC_KEY)
-	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BUTT, value, EC_KEY)
+	if (is_slif_installed())
+		float buttMax = zzEstrusChaurusMaxButtScale.GetValue()
+		SLIF_Main.inflateBoth(akActor, "Estrus Chaurus", "slif_butt", value, -1, -1, EC_KEY, NINODE_MIN_SCALE, buttMax, 1.0, 0.1)
+	else
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BUTT,  value, EC_KEY)
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BUTT, value, EC_KEY)
+	endIf
 EndFunction
 
 Function SetNodeScaleBreast(Actor akActor, bool isFemale, float value, float value01)
-	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST, value, EC_KEY)
-	XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST, value, EC_KEY)
-	if bTorpedoFixEnabled
-		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST01, value01, EC_KEY)
-		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST01, value01, EC_KEY)
+	if (is_slif_installed())
+		float breastMax = zzEstrusChaurusMaxBreastScale.GetValue()
+		SLIF_Main.inflateBoth(akActor, "Estrus Chaurus", "slif_breast", value, -1, -1, EC_KEY, NINODE_MIN_SCALE, breastMax, 1.0, 0.1)
+		if bTorpedoFixEnabled
+			SLIF_Main.inflateBoth(akActor, "Estrus Chaurus", "slif_breast01", value01, -1, -1, EC_KEY, NINODE_MIN_SCALE, breastMax, 1.0, 0.1)
+		endIf
+	else
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST,  value, EC_KEY)
+		XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST, value, EC_KEY)
+		if bTorpedoFixEnabled
+			XPMSELib.SetNodeScale(akActor, isFemale, NINODE_LEFT_BREAST01,  value01, EC_KEY)
+			XPMSELib.SetNodeScale(akActor, isFemale, NINODE_RIGHT_BREAST01, value01, EC_KEY)
+		endIf
 	endIf
 EndFunction
 
 float Function GetNodeTransformScale(Actor akActor, bool isFemale, string nodeName)
-	return NiOverride.GetNodeTransformScale(akActor, false, isFemale, nodeName, EC_KEY)
+	if (is_slif_installed())
+		return SLIF_Main.GetValue(akActor, "Estrus Chaurus", nodeName, 1.0)
+	else
+		return NiOverride.GetNodeTransformScale(akActor, false, isFemale, nodeName, EC_KEY)
+	endIf
 EndFunction
+
+Bool Function is_slif_installed()
+	Return Game.GetModbyName("SexLab Inflation Framework.esp") != 255
+Endfunction
 
 bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
 	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION

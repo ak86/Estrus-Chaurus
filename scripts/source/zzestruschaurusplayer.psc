@@ -5,4 +5,5 @@ event OnPlayerLoadGame()
 
 	( me as zzEstrusChaurusMCMScript ).registerMenus()
 	( me as zzEstrusChaurusevents ).InitModEvents()
+	( me as zzestruschaurusae ).InitModEvents()
 endEvent

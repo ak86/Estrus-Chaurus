@@ -52,6 +52,11 @@ sound 					 Property zzEstrusTentacleFX				Auto
 
 ; VERSION 16 - EC+ 4.11
 
+; VERSION 17 - EC+ 4.30
+
+Race Property ChaurusRace Auto
+Race Property ChaurusReaperRace Auto
+
 zzestruschaurusevents  property ECevents                            Auto 
 
 ; START AE VERSIONING =========================================================
@@ -109,8 +114,12 @@ endFunction
 function RegisterForSLChaurus()
 	
 	debug.notification("EC+ "+ mcm.GetStringVer() + " Registered...")
-	RegisterForModEvent("OrgasmStart", "onOrgasm")
+	InitModEvents()
 
+endfunction
+
+function InitModEvents()
+	RegisterForModEvent("OrgasmStart", "onOrgasm")
 endfunction
 
 ; START EC FUNCTIONS ==========================================================
@@ -123,7 +132,8 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
    	; // Use the HookController() function to get the actorlist
     actor[] actorList = SexLab.HookActors(argString)
     ; // See if a Chaurus was involved
-   	if actorlist.length > 1 && actorlist[1].IsInFaction(chaurus)
+   	if actorlist.length > 1 && (actorlist[1].GetRace() == ChaurusRace || actorlist[1].GetRace() == ChaurusReaperRace) ;SD+ Faction changes mean we can't rely on a faction check
+
    		ChaurusImpregnate(actorlist[0], actorlist[1])
    	endif
 

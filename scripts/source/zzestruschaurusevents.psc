@@ -42,6 +42,9 @@ Keyword ECpkg = None
 
 int EventFxID0 = 0
 int EventFxID1 = 0
+int iNotifyStage = 0
+
+String strCallback
 
 bool dDLoaded = false
 bool UseECFx = true
@@ -58,28 +61,40 @@ zadlibs dDlibs = None
 ;To call an EC event use the following code:
 ;
 ; 	int ECTrap = ModEvent.Create("ECStartAnimation"); Int 			Int does not have to be named "ECTrap" any name would do
-;	if (ECTrap)	
-;   	ModEvent.PushForm(ECTrap, self)             ; Form			Pass the calling form to the event
-;   	ModEvent.PushForm(ECTrap, akActor) 			; Form	 		The animation target
-;   	ModEvent.PushInt(ECTrap, EstrusTraptype)    ; Int			The animation required   -1 = Impregnation only with No Amimation ,  0 = Tentacles, 1 = Machines 2 = Slime 3 = Ooze
-;   	ModEvent.PushBool(ECTrap, true)             ; Bool			Apply the linked EC effect (Ovipostion for Tentacles, Slime & Ooze, Exhaustion for Machine) 
-;   	ModEvent.Pushint(ECTrap, 500)               ; Int			Alarm radius in units (0 to disable) 
-;   	ModEvent.PushBool(ECTrap, true)             ; Bool			Use EC (basic) crowd control on hostiles if the Player is trapped
-;   	ModEvent.Send(ECtrap)
+;	if (ECTrap)
+;   	ModEvent.PushForm(ECTrap, self)             	; Form			Pass the calling form to the event
+;   	ModEvent.PushForm(ECTrap, akActor) 				; Form	 		The animation target
+;   	ModEvent.PushInt(ECTrap, EstrusTraptype)    	; Int			The animation required   -1 = Impregnation only with No Amimation ,  0 = Tentacles, 1 = Machines 2 = Slime 3 = Ooze
+;   	ModEvent.PushBool(ECTrap, true)             	; Bool			Apply the linked EC effect (Ovipostion for Tentacles, Slime & Ooze, Exhaustion for Machine) 
+;   	ModEvent.Pushint(ECTrap, 500)               	; Int			Alarm radius in units (0 to disable) 
+;   	ModEvent.PushBool(ECTrap, true)             	; Bool			Use EC (basic) crowd control on hostiles if the Player is trapped
+;		ModEvent.Send(ECtrap)
 ;	else
 ;		;EC is not installed
 ;	endIf
 ;
 ; Setting the animation required to -1 applies EC breeder effect without any animation or visual effects, alarms, chastity device checks, or crowd control however ALL 6 parameters still
-; need to be passed for the modevent to function.  To use impregnation only the required parameter values are:  self, akActor, -1, False, 0, False
+; need to be passed for the modevent to function.  
+;
+; To use impregnation only the required parameter values are:  self, akActor, -1, False, 0, False
+;
+;
+;
+;To register a callback to trigger on a specific stage of the next animation played use this modevent immediately BEFORE calling the EC event
+;
+;	SendModEvent("ECRegisterforStage,"MyModsCallbackName", CallbackAnimationStage as Float)
+;
+; 	**NB** Only one stage can be registered & the callback registration is cleared once the animation plays, it must therefore be sent each time you trigger the EC animation event that needs a stage callback
+;	Don't forget to Register for the callback event (e.g. RegisterForModEvent("MyModsCallbackName", "OnECStage" ) in your own mod 
 ;
 ;************************************
 ; Please do not link directly to EC functions - they are likely to change and break your mod!
 
 function InitModEvents()
 
+	RegisterForModEvent("ECRegisterforStage", "OnECRegisterforStage")
 	RegisterForModEvent("ECStartAnimation", "OnECStartAnimation")
-	
+
 	if mcm.kwDeviousDevices != None && !dDLoaded
 		dDlibs = Game.GetFormFromFile(0x0000F624, "Devious Devices - Integration.esm") as Zadlibs
 		if dDlibs != None
@@ -93,12 +108,17 @@ function InitModEvents()
 
 endFunction
 
+Function OnECRegisterforStage(String strEventName, String strReqCB, Float fStage, Form kSender)
+	iNotifyStage = fStage as Int
+	strCallback = strReqCB
+EndFunction
 
 bool function OnECStartAnimation(Form Sender, form akTarget, int intAnim, bool bUseFX, int intUseAlarm,  bool bUseCrowdControl)
 
 	actor akActor  = akTarget as Actor
 	Bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akActor.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
 	Bool invalidateVictim = !bGenderOk || akActor.IsInFaction(zzEstrusChaurusExclusionFaction) || akActor.IsBleedingOut() || akActor.isDead()
+
 
 	if !invalidateVictim 
 		int SexlabValidation = Sexlab.ValidateActor(akActor)
@@ -271,6 +291,12 @@ event ECAnimStage(string hookName, string argString, float argNum, form sender)
 	sslBaseAnimation animation = SexLab.HookAnimation(argString)
 	armor ECArmor = none
 
+	if Stage == iNotifyStage && strCallback != ""
+		actorlist[0].SendModEvent(strCallback)
+		iNotifyStage = 0
+		strCallback = ""
+	endif
+
 	if animation.hastag("Tentacle") ||  animation.hastag("Slime")  ||  animation.hastag("Ooze") 
 		if stage >= 2 && stage < 9 
 			SexLab.ApplyCum(actorlist[0], 5)
@@ -407,10 +433,11 @@ event ECAnimEnd(string hookName, string argString, float argNum, form sender)
 endevent
 
 Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
-	if akVictim.IsInFaction(zzEstrusChaurusBreederFaction)
-		return
-	endIf
+
 	if akVictim == PlayerRef
+			if akVictim.IsInFaction(zzEstrusChaurusBreederFaction)
+				return
+			endIf
 		if ( !akVictim.HasSpell(zzEstrusChaurusBreederAbility ) );
 			akVictim.AddSpell(zzEstrusChaurusBreederAbility , false)
 			SexLab.AdjustPlayerPurity(-5.0)
@@ -422,6 +449,8 @@ Function Oviposition(actor akVictim, bool UseParasiteSpell = true)
 				(zzEstrusChaurus.GetNthAlias(BreederIdx) as ReferenceAlias).ForceRefTo(akVictim)
 				(zzEstrusChaurus.GetNthAlias(BreederIdx) as zzestruschaurusaliasscript).OnBreederStart(akVictim, BreederIdx)
 			endif
+		else
+			return
 		endif
 	endif	
 	if UseParasiteSpell

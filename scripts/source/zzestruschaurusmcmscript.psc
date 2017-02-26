@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4220
+	return 4300
 endFunction
 
 string function GetStringVer()
@@ -663,15 +663,19 @@ state STATE_FORCE_FIX
 			Endif
 			bool bIsFemale = (kActor.GetLeveledActorBase().GetSex() == 1)
 
-			idx2 = nodes.length
+			if (is_slif_installed())
+				SLIF_Main.resetActor(kActor, "Estrus Chaurus")
+			else
+				idx2 = nodes.length
 
-			While idx2 >0
-				idx2 -= 1
-				
-				XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, EC_KEY)
-			endWhile
+				While idx2 >0
+					idx2 -= 1
+					
+					XPMSELib.SetNodeScale(kActor, bIsFemale , nodes[idx2], 1.0, EC_KEY)
+				endWhile
 
-			kActor.QueueNiNodeUpdate()
+				kActor.QueueNiNodeUpdate()
+			endIf
 			;SetToggleOptionValueST( false )
 		else
 			SetToggleOptionValueST( false )
@@ -973,11 +977,17 @@ state STATE_NINODE_BREAST_SCALE ; SLIDER
 
 	event OnSliderAcceptST(float value)
 		zzEstrusChaurusMaxBreastScale.SetValue( value )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_breast",    -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+		endIf
 		SetSliderOptionValueST( value, "{1}" )
 	endEvent
 
 	event OnDefaultST()
 		zzEstrusChaurusMaxBreastScale.SetValue( NINODE_MAX_SCALE )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_breast",    -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+		endIf
 		SetSliderOptionValueST( NINODE_MAX_SCALE, "{1}" )
 	endEvent
 endState
@@ -991,11 +1001,17 @@ state STATE_NINODE_BELLY_SCALE ; SLIDER
 
 	event OnSliderAcceptST(float value)
 		zzEstrusChaurusMaxBellyScale.SetValue( value )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE * 2.0)
+		endIf
 		SetSliderOptionValueST( value, "{1}")
 	endEvent
 
 	event OnDefaultST()
 		zzEstrusChaurusMaxBellyScale.SetValue( NINODE_MAX_SCALE )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE * 2.0)
+		endIf
 		SetSliderOptionValueST( NINODE_MAX_SCALE, "{1}" )
 	endEvent
 endState
@@ -1009,11 +1025,17 @@ state STATE_NINODE_BUTT_SCALE; SLIDER
 
 	event OnSliderAcceptST(float value)
 		zzEstrusChaurusMaxButtScale.SetValue( value )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+		endIf
 		SetSliderOptionValueST( value, "{1}")
 	endEvent
 
 	event OnDefaultST()
 		zzEstrusChaurusMaxButtScale.SetValue( 2.0 )
+		if (is_slif_installed())
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+		endIf
 		SetSliderOptionValueST( 2.0, "{1}" )
 	endEvent
 endState
@@ -1092,6 +1114,10 @@ state STATE_DLCMOD_1 ; TEXT
 		SetInfoText("$EC_DLCMOD_1_INFO")
 	endEvent
 endState
+
+Bool Function is_slif_installed()
+	Return Game.GetModbyName("SexLab Inflation Framework.esp") != 255
+Endfunction
 
 bool Function CheckXPMSERequirements(Actor akActor, bool isFemale)
 	return Game.GetModByName("CharacterMakingExtender.esp") == 255 && XPMSELib.CheckXPMSEVersion(akActor, isFemale, XPMSE_VERSION, true) && XPMSELib.CheckXPMSELibVersion(XPMSELIB_VERSION) && SKSE.GetPluginVersion("NiOverride") >= NIOVERRIDE_VERSION && NiOverride.GetScriptVersion() >= NIOVERRIDE_SCRIPT_VERSION

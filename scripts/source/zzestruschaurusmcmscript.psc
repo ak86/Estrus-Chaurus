@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4300
+	return 4310
 endFunction
 
 string function GetStringVer()

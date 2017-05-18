@@ -1,5 +1,8 @@
 Scriptname zzEstrusBreederEffectScript extends activemagiceffect
 
+KeyWord SexLabNoStrip 
+Keyword zad_DeviousBra
+
 int function minInt(int iA, int iB)
 	if iA < iB
 		return iA
@@ -384,9 +387,11 @@ state BIRTHING
 			;kTarget.AddItem(zzEstrusChaurusFluid, 1, true)
 			kTarget.EquipItem(zzEstrusChaurusFluid, true, true)
 			;kTarget.AddItem(zzEstrusChaurusMilkR, 1, true)
-			kTarget.EquipItem(zzEstrusChaurusRMilk, true, true)
-			;kTarget.AddItem(zzEstrusChaurusMilkL, 1, true)
-			kTarget.EquipItem(zzEstrusChaurusLMilk, true, true)
+			If !kTarget.WornHasKeyword(zad_DeviousBra) && !kTarget.GetWornForm(0x00000004)
+				kTarget.EquipItem(zzEstrusChaurusRMilk, true, true)
+				;kTarget.AddItem(zzEstrusChaurusMilkL, 1, true)
+				kTarget.EquipItem(zzEstrusChaurusLMilk, true, true)
+			Endif
 		endIf
 		
 		if ( MCM.zzEstrusChaurusResidual.GetValueInt() == 1 )
@@ -462,6 +467,9 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	sSwellingMsgs[0]   = "$EC_SWELLING_1_3RD"
 	sSwellingMsgs[1]   = "$EC_SWELLING_2_3RD"
 	sSwellingMsgs[2]   = "$EC_SWELLING_3_3RD"
+
+	SexLabNoStrip = KeyWord.GetKeyword("SexLabNoStrip")
+	zad_DeviousBra = KeyWord.GetKeyword("zad_DeviousBra")
 
 	GoToState("IMPREGNATE")
 	zzEstrusChaurusInfected.Mod( 1.0 )
@@ -598,13 +606,12 @@ endEvent
 
 
 function stripActor(actor akVictim)
-
 	Form ItemRef = None
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(30))
 	;StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(31))
 	;StripItem(akVictim, ItemRef)
-	ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(32))
+	ItemRef = akVictim.GetWornForm(0x00000004) ;32
 	StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(33))
 	;StripItem(akVictim, ItemRef)
@@ -614,20 +621,22 @@ function stripActor(actor akVictim)
 	;StripItem(akVictim, ItemRef)
 	;ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(38))
 	;StripItem(akVictim, ItemRef)	
-	ItemRef = akVictim.GetWornForm(Armor.GetMaskForSlot(39))
+	ItemRef = akVictim.GetWornForm(0x00000200) ;39
+	StripItem(akVictim, ItemRef)
+	ItemRef = akVictim.GetWornForm(0x00020000) ;47
 	StripItem(akVictim, ItemRef)
 	ItemRef = akVictim.GetEquippedWeapon(false)
-	if ItemRef
+	if ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		akVictim.UnequipItemEX(ItemRef, 1, false)
 	endIf
 	ItemRef = akVictim.GetEquippedWeapon(true)
-	if ItemRef
+	if ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		akVictim.UnequipItemEX(ItemRef, 2, false)
 	endif
 endfunction
 
 function StripItem(actor akVictim, form ItemRef)
-	If ItemRef
+	If ItemRef && !ItemRef.HasKeyword(SexLabNoStrip)
 		Armor akArmor = ItemRef as Armor
 		akVictim.UnequipItem(ItemRef, false, true)
 	endif

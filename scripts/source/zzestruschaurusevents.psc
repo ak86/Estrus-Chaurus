@@ -95,7 +95,7 @@ function InitModEvents()
 	RegisterForModEvent("ECRegisterforStage", "OnECRegisterforStage")
 	RegisterForModEvent("ECStartAnimation", "OnECStartAnimation")
 
-	if mcm.kwDeviousDevices != None && !dDLoaded
+	if Keyword.GetKeyword("zad_deviousBelt") as Keyword && !dDLoaded
 		dDlibs = Game.GetFormFromFile(0x0000F624, "Devious Devices - Integration.esm") as Zadlibs
 		if dDlibs != None
 			debug.trace("_EC_::Loaded dD Integration")
@@ -105,7 +105,6 @@ function InitModEvents()
 			dDLoaded = false
 		endif
 	endif 
-
 endFunction
 
 Function OnECRegisterforStage(String strEventName, String strReqCB, Float fStage, Form kSender)
@@ -159,14 +158,27 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		Else
 			EstrusType = "Tentacle"
 		Endif
+		
+		if UseFX
+			If EstrusID == 0
+				akvictim.placeatme(TentacleExplosion)
+				if !isPlayer
+					akvictim.pushactoraway(akVictim, 2)
+					utility.wait(1)
+				endif
+			Elseif EstrusID == 3
+				akvictim.placeatme(TentacleExplosion)
+				utility.wait(1)
+			endif
+		endif
 
-		armor dDArmbinder = none
+		Armor dDArmbinder
 
 		if dDLoaded
 
 			dDArmbinder = dDlibs.GetWornDeviceFuzzyMatch(akVictim, dDlibs.zad_DeviousArmbinder) 
 
-			if akVictim.WornHasKeyword(dDlibs.zad_DeviousBelt)
+			if akVictim.WornHasKeyword(dDlibs.zad_DeviousBelt) || akVictim.WornHasKeyword(dDlibs.zad_DeviousYoke) || (dDArmbinder && dDArmbinder.HasKeyword(dDlibs.zad_BlockGeneric))
 				if isPlayer
 					if EstrusID == 1 
 						debug.notification("A red dot scans over your devious devices and vanishes...")
@@ -181,12 +193,26 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 			endif
 		endif
 
+		If dDArmbinder
+			dDlibs.ManipulateGenericDevice(akVictim, dDArmbinder, false)
+			utility.wait(1)
+			If !akVictim.GetWornForm(0x00010000) as Armor
+				if isPlayer
+					debug.notification("'Something' behind you deftly stripped off your armbinder...")					
+				endIf
+				akVictim.DropObject(dDArmbinder, 1)
+			Else
+				debug.notification("Something nasty was warded away by your devious aura...")
+				if UseAlarm
+					akvictim.CreateDetectionEvent(akVictim, UseAlarm)
+				endif 
+				return
+			Endif
+		Endif
+
 		if isplayer
 			SendModEvent("dhlp-Suspend") ;EC Scene starting - suspend Deviously Helpless Events
 		endif 
-		
-		akVictim.StopCombatAlarm()
-		akVictim.StopCombat()
 	
 		animations   = SexLab.GetAnimationsByTag(1, "Estrus", EstrusType)
 		sexActors    = new actor[1]
@@ -194,39 +220,21 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 		RegisterForModEvent("AnimationStart_" + strVictimRefid, "ECAnimStart")
 		RegisterForModEvent("StageEnd_" + strVictimRefid, "ECAnimStage")
 		RegisterForModEvent("AnimationEnd_" + strVictimRefid,   "ECAnimEnd")
-		If dDArmbinder
-			if isPlayer
-				debug.notification("'Something' behind you deftly strips off your armbinder...")
-				utility.wait(1)
-			endIf
-			dDlibs.ManipulateGenericDevice(akVictim, dDArmbinder, false)
-			akVictim.DropObject(dDArmbinder, 1)
-		Endif
-
-		if UseFX
-			If EstrusID == 0
-				akvictim.placeatme(TentacleExplosion)
-				if !isPlayer
-					akvictim.pushactoraway(akVictim, 2)
-					utility.wait(1)
-				endif
-			Elseif EstrusID == 3
-				akvictim.placeatme(TentacleExplosion)
-				utility.wait(1)
-			endif
-		endif
 		
-		if UseAlarm
-			akVictim.CreateDetectionEvent(akVictim, UseAlarm)
-		endif
+		akVictim.StopCombatAlarm()
+		akVictim.StopCombat()
 
 		if SexLab.StartSex(sexActors, animations, akVictim, none, false, strVictimRefid) > -1
-
 			if isplayer && UseCrowdControl
 				zzestruschaurusSpectators.start()
 				OnUpdate()
 			endif
 		endIf
+
+		if UseAlarm
+			akVictim.CreateDetectionEvent(akVictim, UseAlarm)
+		endif
+
 
 endFunction
 

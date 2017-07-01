@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4310
+	return 4320
 endFunction
 
 string function GetStringVer()
@@ -270,7 +270,7 @@ event OnVersionUpdate(int a_version)
 	endIf
 
 	if (a_version >= 4100 && CurrentVersion < 4100 && CurrentVersion > 0 )
-		debug.MessageBox("Warning: Upgrades of earlier versions of EC+ to version 4.1 are NOT supported. A new game or clean save is required.")
+		debug.MessageBox("Warning: Upgrades of earlier versions of EC+ to version 4.1+ are NOT supported. A new game or clean save is required.")
 	endif
 
 	if (a_version >= 4110 && CurrentVersion < 4110)

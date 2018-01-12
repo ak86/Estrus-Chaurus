@@ -178,7 +178,7 @@ function DoECAnimation(actor akVictim, int AnimID, bool UseFX, int UseAlarm, boo
 
 			dDArmbinder = dDlibs.GetWornDeviceFuzzyMatch(akVictim, dDlibs.zad_DeviousArmbinder) 
 
-			if akVictim.WornHasKeyword(dDlibs.zad_DeviousBelt) || akVictim.WornHasKeyword(dDlibs.zad_DeviousYoke) || (dDArmbinder && dDArmbinder.HasKeyword(dDlibs.zad_BlockGeneric))
+			if akVictim.WornHasKeyword(dDlibs.zad_DeviousBelt) || ( akVictim.WornHasKeyword(dDlibs.zad_DeviousHeavyBondage) && !dDArmbinder) || (dDArmbinder && dDArmbinder.HasKeyword(dDlibs.zad_BlockGeneric))
 				if isPlayer
 					if EstrusID == 1 
 						debug.notification("A red dot scans over your devious devices and vanishes...")

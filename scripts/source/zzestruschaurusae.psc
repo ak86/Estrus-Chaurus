@@ -54,8 +54,9 @@ sound 					 Property zzEstrusTentacleFX				Auto
 
 ; VERSION 17 - EC+ 4.30
 
-Race Property ChaurusRace Auto
-Race Property ChaurusReaperRace Auto
+Race Property ChaurusRace Auto ;Deprecated
+Race Property ChaurusReaperRace Auto ;Deprecated
+Formlist Property zzEstrusChaurusRaceList Auto
 
 zzestruschaurusevents  property ECevents                            Auto 
 
@@ -68,7 +69,7 @@ endFunction
 
 function aeUpdate( int aiVersion )
 	
-	int myVersion = 16 
+	int myVersion = 17
 
 	if (myVersion >= 2 && aiVersion < 2)
 		zzEstrusChaurusBreederAbility = Game.GetFormFromFile(0x00019121, "EstrusChaurus.esp") as Spell
@@ -128,12 +129,12 @@ endfunction
 event onOrgasm(string eventName, string argString, float argNum, form sender)
    if mcm.zzEstrusDisablePregnancy.GetValueInt()
     	return
-    endif	
+    endif
+    int tid = argString as Int	
    	; // Use the HookController() function to get the actorlist
-    actor[] actorList = SexLab.HookActors(argString)
-    ; // See if a Chaurus was involved
-   	if actorlist.length > 1 && (actorlist[1].GetRace() == ChaurusRace || actorlist[1].GetRace() == ChaurusReaperRace) ;SD+ Faction changes mean we can't rely on a faction check
-
+    actor[] actorList = SexLab.GetController(tid).Positions; SexLab.HookActors(argString)
+    ; // See if a Chaurus was involved  - SD+ Faction changes mean we can't rely on a faction check
+   	if actorlist.length > 1 && zzEstrusChaurusRaceList.HasForm(actorlist[1].GetRace()) && Sexlab.PregnancyRisk(tid, actorlist[0], false, true) 
    		ChaurusImpregnate(actorlist[0], actorlist[1])
    	endif
 

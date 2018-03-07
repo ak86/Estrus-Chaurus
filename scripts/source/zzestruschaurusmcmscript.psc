@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4320
+	return 4341
 endFunction
 
 string function GetStringVer()
@@ -283,6 +283,9 @@ event OnVersionUpdate(int a_version)
 		Pages[5] = "$EC_PAGE_6"
 	endif
 
+	if (a_version >= 4341 && CurrentVersion < 4341)
+		me.aeUpdate(11)
+	endif
 
 endEvent
 

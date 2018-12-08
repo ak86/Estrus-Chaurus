@@ -114,7 +114,7 @@ endFunction
 
 function RegisterForSLChaurus()
 	
-	debug.notification("EC+ "+ mcm.GetStringVer() + " Registered...")
+	debug.notification("EC+ "+ mcm.GetStringVer() + " Initialised...")
 	InitModEvents()
 
 endfunction
@@ -134,7 +134,7 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
    	; // Use the HookController() function to get the actorlist
     actor[] actorList = SexLab.GetController(tid).Positions; SexLab.HookActors(argString)
     ; // See if a Chaurus was involved  - SD+ Faction changes mean we can't rely on a faction check
-   	if actorlist.length > 1 && zzEstrusChaurusRaceList.HasForm(actorlist[1].GetRace()) && Sexlab.PregnancyRisk(tid, actorlist[0], false, true) 
+   	if actorlist.length > 1 && zzEstrusChaurusRaceList.HasForm(actorlist[1].GetRace()) && SexLab.GetController(tid).IsVaginal ; For some reason Sexlab.PregnancyRisk(tid, actorlist[0], false, true) always returns false
    		ChaurusImpregnate(actorlist[0], actorlist[1])
    	endif
 

@@ -38,6 +38,7 @@ Quest property zzestruschaurusSpectators Auto
 Actor[] Victim
 
 Keyword property zzEstrusChaurusArmor Auto
+Keyword Property zzEstrusParasite Auto
 Keyword ECpkg = None
 
 int EventFxID0 = 0
@@ -51,14 +52,13 @@ bool UseECFx = true
 
 zadlibs dDlibs = None
 
-
 ;************************************
 ;**Estrus Chaurus Public Interface **
 ;************************************
 ;
 ;The EC interface uses ModEvents.  This method can be used without loading EC as a master or using GetFormFromFile
 ; 
-;To call an EC event use the following code:
+;To call an EC Animation event use the following code:
 ;
 ; 	int ECTrap = ModEvent.Create("ECStartAnimation"); Int 			Int does not have to be named "ECTrap" any name would do
 ;	if (ECTrap)
@@ -85,7 +85,24 @@ zadlibs dDlibs = None
 ;	SendModEvent("ECRegisterforStage,"MyModsCallbackName", CallbackAnimationStage as Float)
 ;
 ; 	**NB** Only one stage can be registered & the callback registration is cleared once the animation plays, it must therefore be sent each time you trigger the EC animation event that needs a stage callback
-;	Don't forget to Register for the callback event (e.g. RegisterForModEvent("MyModsCallbackName", "OnECStage" ) in your own mod 
+;	       Don't forget to Register for the callback event (e.g. RegisterForModEvent("MyModsCallbackName", "OnECStage" ) in your own mod 
+;
+;
+;To call an EC Birth event use the following code:
+;
+; 	int ECBirth = ModEvent.Create("ECGiveBirth")		; Int 			Int does not have to be named "ECBirth" any name would do
+;	if (ECBirth)
+;   	ModEvent.PushForm(ECBirth, self)             	; Form			Pass the calling form to the event
+;   	ModEvent.PushForm(ECBirth, akActor)             ; Form			The actor to give birth
+;   	ModEvent.PushForm(ECBirth, akItem) 				; Form	 		The Item that the actor will give birth to -  if None the actor will birth Chaurus Eggs
+;		ModEvent.PushInt(ECBirth, aiNumItems)			; Int 			The number of Items to give birth too
+;		ModEvent.Send(ECBirth)
+;	else
+;		;EC is not installed
+;	endIf
+;
+;   **NB** The birth event will not fire if the actor is already infected with the Chaurus Parasite effect
+;          This birth event is unaware of calling mods effects on Breast/Belly/Butt nodes - Any changes to inflation of these nodes at birth must be handled by the calling mod
 ;
 ;************************************
 ; Please do not link directly to EC functions - they are likely to change and break your mod!
@@ -94,6 +111,7 @@ function InitModEvents()
 
 	RegisterForModEvent("ECRegisterforStage", "OnECRegisterforStage")
 	RegisterForModEvent("ECStartAnimation", "OnECStartAnimation")
+	RegisterForModEvent("ECGiveBirth", "OnECGiveBirth")
 
 	if Keyword.GetKeyword("zad_deviousBelt") as Keyword && !dDLoaded
 		dDlibs = Game.GetFormFromFile(0x0000F624, "Devious Devices - Integration.esm") as Zadlibs
@@ -105,7 +123,19 @@ function InitModEvents()
 			dDLoaded = false
 		endif
 	endif 
+
 endFunction
+
+bool function OnECGiveBirth(Form Sender, Form akTarget, Form akBirthItem, Int aiNumItems)
+	Actor kVictim = akTarget as Actor
+	If kVictim.HasSpell(zzEstrusChaurusBreederAbility) || kVictim.HasKeyword(zzEstrusParasite)
+		Return false
+	EndIf
+	StorageUtil.SetFormValue(kVictim, "zzEC_ForceBirthEvent", akBirthItem)
+	StorageUtil.SetIntValue(kVictim, "zzEC_ForceBirthEvent", aiNumItems)
+	kVictim.AddSpell(zzEstrusChaurusBreederAbility , false)
+	Return true
+EndFunction
 
 Function OnECRegisterforStage(String strEventName, String strReqCB, Float fStage, Form kSender)
 	iNotifyStage = fStage as Int

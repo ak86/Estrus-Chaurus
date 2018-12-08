@@ -7,3 +7,7 @@ event OnPlayerLoadGame()
 	( me as zzEstrusChaurusevents ).InitModEvents()
 	( me as zzestruschaurusae ).InitModEvents()
 endEvent
+
+Event OnInit()
+	debug.notification("EC+ Installed - Save & reload your game to start...  ")
+EndEvent

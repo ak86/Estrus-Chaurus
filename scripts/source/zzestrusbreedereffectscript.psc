@@ -17,9 +17,12 @@ Float function eggChain()
 
 	Sound.SetInstanceVolume( zzEstrusBreastPainMarker.Play(kTarget), 1.0 )
 	Int idx = 0
-	Int len = Utility.RandomInt( 5, 9 )
+	Int len = StorageUtil.PluckIntValue(kTarget, "zzEC_ForceBirthEvent")
+	If !len
+		len = Utility.RandomInt( 5, 9 )
+	Endif
 	while idx < len
-		thisEgg[idx] = kTarget.PlaceAtme(zzChaurusEggs, abForcePersist = true)
+		thisEgg[idx] = kTarget.PlaceAtme(BirthObject, 1, true, true)
 		thisEgg[idx].SetActorOwner( kTarget.GetActorBase() )
 
 			If bHasScrotNode
@@ -29,7 +32,7 @@ Float function eggChain()
 				thisEgg[idx].MoveToNode(kTarget, NINODE_SKIRT02)
 				;thisEgg[idx].SplineTranslateToRefNode(kTarget, NINODE_SKIRT02, 100.0, 0.1)
 			endif
-
+			thisEgg[idx].Enable()
 		idx += 1
 		Utility.Wait( Utility.RandomFloat( 3.5, 6.5 ) )
 	endWhile
@@ -84,7 +87,7 @@ function oviposition()
 	; BREAST SWELL ====================================================
 	if ( bBreastEnabled )
 		fPregBreast        = fPregBreast - fBreastReduction
-		if bTorpedoFixEnabled
+		if bTorpedoFixEnabled && (fPregBreast > 0.0)
 			fPregBreast01  = fOrigBreast01 * (fOrigBreast / fPregBreast)
 		endIf
 
@@ -361,6 +364,9 @@ endState
 state BIRTHING
 	event OnBeginState()
 		Debug.Trace("_EC_::state::BIRTHING")
+		If !BirthObject
+			BirthObject = zzChaurusEggs
+		Endif
 		while ( kTarget.IsOnMount() || Utility.IsInMenuMode() )
 			Utility.Wait( 2.0 )
 		endWhile
@@ -377,7 +383,7 @@ state BIRTHING
 		Debug.SendAnimationEvent(kTarget, "zzEstrusCommon01Up")
 		bIsAnimating = true
 
-		if ( MCM.zzEstrusChaurusBirth.GetValueInt() == 1 )
+		if ( MCM.zzEstrusChaurusBirth.GetValueInt() == 1 ) || StorageUtil.HasIntValue(kTarget, "zzEC_ForceBirthEvent")
 			iBirthingLoops = 1
 		else
 			iBirthingLoops = 3
@@ -471,8 +477,16 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	SexLabNoStrip = KeyWord.GetKeyword("SexLabNoStrip")
 	zad_DeviousBra = KeyWord.GetKeyword("zad_DeviousBra")
 
-	GoToState("IMPREGNATE")
 	zzEstrusChaurusInfected.Mod( 1.0 )
+	
+	If StorageUtil.HasFormValue(akTarget, "zzEC_ForceBirthEvent")
+		BirthObject = StorageUtil.PluckFormValue(akTarget, "zzEC_ForceBirthEvent")
+		GoToState("BIRTHING")
+		Return
+	Else
+		GoToState("IMPREGNATE")
+	EndIf
+	
 	kTarget.StopCombatAlarm()
 
 	Float fMinTime     = zzEstrusIncubationPeriod.GetValue() * fIncubationTimeMin
@@ -741,6 +755,8 @@ Int iBirthingLoops       = 3
 Int iOrigSLAExposureRank = -3
 Int iAnimationIndex      = 1
 bool bIsAnimating		 = false
+
+Form BirthObject
 
 String[] sSwellingMsgs
 

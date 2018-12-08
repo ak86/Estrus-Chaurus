@@ -12,7 +12,7 @@ int property TentacleSpitChance = 20 auto
 
 ; SCRIPT VERSION ----------------------------------------------------------------------------------
 int function GetVersion()
-	return 4341
+	return 4350
 endFunction
 
 string function GetStringVer()
@@ -286,6 +286,10 @@ event OnVersionUpdate(int a_version)
 	if (a_version >= 4341 && CurrentVersion < 4341)
 		me.aeUpdate(11)
 	endif
+
+	If CurrentVersion > 0 
+		debug.notification("EC+ Updating to Version " + GetStringVer())
+	Endif
 
 endEvent
 
@@ -1029,7 +1033,7 @@ state STATE_NINODE_BUTT_SCALE; SLIDER
 	event OnSliderAcceptST(float value)
 		zzEstrusChaurusMaxButtScale.SetValue( value )
 		if (is_slif_installed())
-			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_butt", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
 		endIf
 		SetSliderOptionValueST( value, "{1}")
 	endEvent
@@ -1037,7 +1041,7 @@ state STATE_NINODE_BUTT_SCALE; SLIDER
 	event OnDefaultST()
 		zzEstrusChaurusMaxButtScale.SetValue( 2.0 )
 		if (is_slif_installed())
-			SLIF_Main.updateActorList("Estrus Chaurus", "slif_belly", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
+			SLIF_Main.updateActorList("Estrus Chaurus", "slif_butt", -1, -1, -1, EC_KEY, NINODE_MIN_SCALE, NINODE_MAX_SCALE)
 		endIf
 		SetSliderOptionValueST( 2.0, "{1}" )
 	endEvent

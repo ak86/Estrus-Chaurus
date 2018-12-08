@@ -121,6 +121,7 @@ endfunction
 
 function InitModEvents()
 	RegisterForModEvent("OrgasmStart", "onOrgasm")
+	RegisterForModEvent("SexLabOrgasmSeparate", "onOrgasmS")
 endfunction
 
 ; START EC FUNCTIONS ==========================================================
@@ -138,6 +139,23 @@ event onOrgasm(string eventName, string argString, float argNum, form sender)
    		ChaurusImpregnate(actorlist[0], actorlist[1])
    	endif
 
+endEvent
+
+event onOrgasmS(Form ActorRef, Int Thread)
+ 	if mcm.zzEstrusDisablePregnancy.GetValueInt()
+		return
+	endif
+	actor akActor = ActorRef as actor
+	int tid = Thread
+	; // Use the HookController() function to get the actorlist
+	actor[] actorList = SexLab.GetController(tid).Positions; SexLab.HookActors(argString)
+	
+	if actorList.Length > 1 && akActor != actorList[0]
+		; // See if a Chaurus was involved  - SD+ Faction changes mean we can't rely on a faction check
+		if actorlist.length > 1 && zzEstrusChaurusRaceList.HasForm(actorlist[1].GetRace()) && SexLab.GetController(tid).IsVaginal 
+			ChaurusImpregnate(actorlist[0], actorlist[1])
+		endif
+	endif
 endEvent
 
 function ChaurusImpregnate(actor akVictim, actor akAgressor)

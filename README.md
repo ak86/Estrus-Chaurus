@@ -1,1 +1,1 @@
-# Skyrim Estrus Chaurus v4.35
+# Skyrim Estrus Chaurus v4.36

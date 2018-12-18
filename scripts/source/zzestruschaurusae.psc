@@ -60,6 +60,10 @@ Formlist Property zzEstrusChaurusRaceList Auto
 
 zzestruschaurusevents  property ECevents                            Auto 
 
+;VERSION 18 - EC+ 4.36
+
+Keyword zad_DeviousBelt
+
 ; START AE VERSIONING =========================================================
 ; This functions exactly as and has the same purpose as the SkyUI function
 ; GetVersion(). It returns the static version of the AE script.
@@ -69,7 +73,7 @@ endFunction
 
 function aeUpdate( int aiVersion )
 	
-	int myVersion = 17
+	int myVersion = 18
 
 	if (myVersion >= 2 && aiVersion < 2)
 		zzEstrusChaurusBreederAbility = Game.GetFormFromFile(0x00019121, "EstrusChaurus.esp") as Spell
@@ -122,6 +126,7 @@ endfunction
 function InitModEvents()
 	RegisterForModEvent("OrgasmStart", "onOrgasm")
 	RegisterForModEvent("SexLabOrgasmSeparate", "onOrgasmS")
+	zad_DeviousBelt = Keyword.GetKeyword("zad_DeviousBelt")
 endfunction
 
 ; START EC FUNCTIONS ==========================================================
@@ -161,7 +166,7 @@ endEvent
 function ChaurusImpregnate(actor akVictim, actor akAgressor)
 
 	bool bGenderOk = mcm.zzEstrusChaurusGender.GetValueInt() == 2 || akvictim.GetLeveledActorBase().GetSex() == mcm.zzEstrusChaurusGender.GetValueInt()
-	Bool invalidateVictim = !bGenderOk || ( akVictim.IsInFaction(zzEstrusChaurusExclusionFaction) || akVictim.IsBleedingOut() || akVictim.isDead() )
+	Bool invalidateVictim = !bGenderOk || ( akVictim.IsInFaction(zzEstrusChaurusExclusionFaction) || akVictim.IsBleedingOut() || akVictim.isDead() ) || ( zad_DeviousBelt && akVictim.WornHasKeyword(zad_DeviousBelt) )
 	
 	if invalidateVictim
 		return
